@@ -21,8 +21,9 @@ st.header("Batting Average Prediction ⚾")
 # Dropdown to select player(s)
 players = st.multiselect("Select Player", df["Player"].to_list())
 
-# Filter data based on selected player(s)
-df = df.filter(df["Player"].is_in(players))
+if players:
+    # Filter data based on selected player(s)
+    df = df.filter(df["Player"].is_in(players))
 
 # Create bar chart
 chart = (

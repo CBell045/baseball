@@ -20,4 +20,4 @@ How well can analytical models predict a baseball player’s batting average for
 2. Install dependencies: `uv sync`
    This will create a virtual environment, install python, and install the dependencies.
 
-3. Run streamlit: `uv run streamlit run app.py`
+3. Run streamlit: `uv run streamlit run Home.py`
