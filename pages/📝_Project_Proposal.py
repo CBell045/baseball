@@ -9,7 +9,6 @@ st.subheader("Team Members")
 - Madison Wilderman
 - Afra Ismail
 - Chad Bell
-- Luc Lu
 - Kristen Hanold
 """
 

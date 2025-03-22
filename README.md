@@ -10,10 +10,9 @@ How well can analytical models predict a baseball player’s batting average for
 - Madison Wilderman
 - Afra Ismail
 - Chad Bell
-- Luc Lu
 - Kristen Hanold
 
-## Development
+## Getting Started
 
 1. Install uv: https://docs.astral.sh/uv/#installation
 
@@ -21,3 +20,7 @@ How well can analytical models predict a baseball player’s batting average for
    This will create a virtual environment, install python, and install the dependencies.
 
 3. Run streamlit: `uv run streamlit run Home.py`
+
+## Development
+
+Each group member has their own folder under exploration/yourname. This is where you can put your notebooks and other files.
