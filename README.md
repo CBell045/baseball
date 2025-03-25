@@ -4,7 +4,7 @@
 
 How well can analytical models predict a baseball player’s batting average for the upcoming season based on historical performance metrics?
 
-## Group Members
+## Team Members
 
 - Wyatt Pangan
 - Madison Wilderman
@@ -23,4 +23,9 @@ How well can analytical models predict a baseball player’s batting average for
 
 ## Development
 
-Each group member has their own folder under exploration/yourname. This is where you can put your notebooks and other files.
+Each team member has their own folder under exploration/yourname. This is where you can put your notebooks and other files.
+
+
+## Data Dictionary
+
+A data dictionary for the Retrosheet csv files can be found [here](https://www.retrosheet.org/downloads/csvcontents.html). 
