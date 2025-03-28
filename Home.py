@@ -52,7 +52,7 @@ if player:
         .group_by("id", "year")
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
-        .filter(pl.col("ab") > 100)
+        .filter(pl.col("b_ab") > 100)
         .sort("year")
     ).collect()
 
