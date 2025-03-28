@@ -47,18 +47,13 @@ if player:
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
         .filter(pl.col("b_ab") > 100)
-        .select(
-            pl.col("id").alias("unique_id"),
-            pl.col("year").alias("ds"),
-            pl.col("avg").alias("y"),
-        )
     ).collect()
 
     # Last year
-    year = batting.select("Year").max().item()
+    year = batting.select("year").max().item()
 
     # Filter data based on selected year
-    df = batting.filter(pl.col("Season") < year)
+    df = batting.filter(pl.col("year") < year)
 
     models = [
         statsforecast.models.AutoARIMA(),
@@ -76,7 +71,15 @@ if player:
         verbose=True,
     )
 
-    forecasts_df = sf.forecast(df=batting, h=1, level=[95])
+    forecasts_df = sf.forecast(
+        df=batting.select(
+            pl.col("id").alias("unique_id"),
+            pl.col("year").alias("ds"),
+            pl.col("avg").alias("y"),
+        ),
+        h=1,
+        level=[95],
+    )
     st.dataframe(forecasts_df)
 
     # Display prediction
@@ -85,14 +88,14 @@ if player:
     )
 
     st.write(
-        f"Actual Batting Average for {year}: {batting.filter(pl.col('Season') == year).select('AVG').item():.3f}"
+        f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
     )
 
     # Create chart
     fig = px.line(
         batting,
-        x="Season",
-        y="AVG",
+        x="year",
+        y="avg",
         title=f"Batting Average Prediction for {player}",
     )
 
