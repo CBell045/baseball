@@ -6,10 +6,16 @@ import statsforecast
 
 st.header("Batting Average Prediction ⚾")
 
+st.write(
+    "This app predicts the batting average of a player for the next season using data from retrosheet."
+    "The model is trained on the player's historical data, excluding their last season played."
+    "The model then predicts the batting average for the last season and compares it with the actual batting average."
+)
 
 # Dropdown to select player(s)
 players = (
     pl.scan_parquet("parquets/allplayers.parquet")
+    .filter(pl.col("g") > 30)
     .with_columns(
         (pl.col("first") + pl.lit(" ") + pl.col("last")).alias("name"),
         pl.count("season").over("id").alias("count"),
@@ -36,6 +42,7 @@ if player:
     batting = (
         pl.scan_parquet("parquets/batting.parquet")
         .filter(pl.col("id") == player_id)
+        .filter(pl.col("ab") > 100)
         .with_columns(
             pl.col("date")
             .cast(pl.String)
@@ -46,7 +53,6 @@ if player:
         .group_by("id", "year")
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
-        .filter(pl.col("b_ab") > 100)
         .sort("year")
     ).collect()
 
