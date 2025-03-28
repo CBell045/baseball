@@ -1,71 +1,107 @@
 import streamlit as st
-import pybaseball
-from statsmodels.tsa.arima.model import ARIMA
-import pandas as pd
 import plotly.express as px
-
-pd.options.mode.copy_on_write = True
-
-
-@st.cache_data()
-def load_data():
-    # Load data from pybaseball
-    return pybaseball.batting_stats(2000, 2024)
+import polars as pl
+import statsforecast
 
 
 st.header("Batting Average Prediction ⚾")
 
-data = load_data()
 
 # Dropdown to select player(s)
-player: str = st.selectbox("Select Player", data["Name"].unique())
+players = (
+    pl.scan_parquet("parquets/allplayers.parquet")
+    .with_columns(
+        (pl.col("first") + pl.lit(" ") + pl.col("last")).alias("name"),
+        pl.count("season").over("id").alias("count"),
+    )
+    .filter(pl.col("name").is_not_null())
+    .filter(pl.col("count") > 5)
+    .select(
+        pl.col("name"),
+        pl.col("id"),
+    )
+    .unique()
+    .sort("name")
+).collect()
+
+player: str = st.selectbox(
+    "Select Player",
+    players,
+)
 
 if player:
+    player_id = players.filter(pl.col("name") == player).select("id").item()
+
     # Filter data based on selected player(s)
-    player_df = data[data["Name"] == player]
+    batting = (
+        pl.scan_parquet("parquets/batting.parquet")
+        .filter(pl.col("id") == player_id)
+        .with_columns(
+            pl.col("date")
+            .cast(pl.String)
+            .str.strptime(pl.Date, "%Y%m%d")
+            .dt.year()
+            .alias("year")
+        )
+        .group_by("id", "year")
+        .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
+        .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
+        .filter(pl.col("b_ab") > 100)
+        .select(
+            pl.col("id").alias("unique_id"),
+            pl.col("year").alias("ds"),
+            pl.col("avg").alias("y"),
+        )
+    ).collect()
 
-    # Player df sort
-    player_df = player_df.sort_values(by="Season")
+    # Last year
+    year = batting.select("Year").max().item()
 
-    # Dropdown to select year
-    year = st.selectbox(
-        "Select Year", sorted(player_df["Season"].unique().tolist(), reverse=True)
+    # Filter data based on selected year
+    df = batting.filter(pl.col("Season") < year)
+
+    models = [
+        statsforecast.models.AutoARIMA(),
+        # statsforecast.models.AutoETS(),
+        # statsforecast.models.AutoRegressive(10),
+        # statsforecast.models.HoltWinters(),
+        # statsforecast.models.HistoricAverage(),
+    ]
+
+    # Instantiate StatsForecast class as sf
+    sf = statsforecast.StatsForecast(
+        models=models,
+        freq=1,
+        n_jobs=-1,
+        verbose=True,
     )
 
-    if year:
-        # Filter data based on selected year
-        df = player_df[player_df["Season"] < year]
+    forecasts_df = sf.forecast(df=batting, h=1, level=[95])
+    st.dataframe(forecasts_df)
 
-        df["Season"] = pd.to_datetime(df["Season"], format="%Y")
-        df = df.set_index("Season").sort_index().asfreq("YS")
+    # Display prediction
+    st.write(
+        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-95').item():.3f} to {forecasts_df.select('AutoARIMA-hi-95').item():.3f})"
+    )
 
-        # Predict
-        model = ARIMA(df["AVG"], order=(1, 1, 1))
-        fitted_model = model.fit()
+    st.write(
+        f"Actual Batting Average for {year}: {batting.filter(pl.col('Season') == year).select('AVG').item():.3f}"
+    )
 
-        forecast = fitted_model.forecast(steps=1)
+    # Create chart
+    fig = px.line(
+        batting,
+        x="Season",
+        y="AVG",
+        title=f"Batting Average Prediction for {player}",
+    )
 
-        # Display prediction
-        st.write(f"Predicted Batting Average for {year}: {forecast.iloc[0]:.3f}")
+    fig.add_scatter(
+        x=[year],
+        y=[forecasts_df.select("AutoARIMA").item()],
+        mode="markers",
+        marker=dict(color="red", size=10),
+        name="Prediction",
+    )
 
-        st.write(
-            f"Actual Batting Average for {year}: {player_df[player_df['Season'] == year]['AVG'].values[0]:.3f}"
-        )
-
-        # Create chart
-        fig = px.line(
-            player_df,
-            x="Season",
-            y="AVG",
-            title=f"Batting Average Prediction for {player}",
-        )
-
-        fig.add_scatter(
-            x=[year],
-            y=[forecast.iloc[0]],
-            mode="markers",
-            marker=dict(color="red", size=10),
-            name="Prediction",
-        )
-
-        st.plotly_chart(fig)
+    st.plotly_chart(fig)
