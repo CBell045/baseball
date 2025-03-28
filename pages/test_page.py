@@ -1,7 +1,6 @@
 import streamlit as st
-import polars as pl
-
-
+import plotly.express as px
+import statsforecast
 import polars as pl
 
 players = (
@@ -49,8 +48,6 @@ if player:
         )
     ).collect()
 
-    import statsforecast.models
-
     models = [
         statsforecast.models.AutoARIMA(),
         # statsforecast.models.AutoETS(),
@@ -69,3 +66,44 @@ if player:
 
     forecasts_df = sf.forecast(df=batting, h=1, level=[90])
     st.dataframe(forecasts_df)
+
+    # Last year
+    year = batting.select("Year").max().item()
+
+    # Instantiate StatsForecast class as sf
+    sf = statsforecast.StatsForecast(
+        models=models,
+        freq=1,
+        n_jobs=-1,
+        verbose=True,
+    )
+
+    forecasts_df = sf.forecast(df=batting, h=1, level=[95])
+    st.dataframe(forecasts_df)
+
+    # Display prediction
+    st.write(
+        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-95').item():.3f} to {forecasts_df.select('AutoARIMA-hi-95').item():.3f})"
+    )
+
+    st.write(
+        f"Actual Batting Average for {year}: {batting.filter(pl.col('Season') == year).select('AVG').item():.3f}"
+    )
+
+    # Create chart
+    fig = px.line(
+        batting,
+        x="Season",
+        y="AVG",
+        title=f"Batting Average Prediction for {player}",
+    )
+
+    fig.add_scatter(
+        x=[year],
+        y=[forecasts_df.select("AutoARIMA").item()],
+        mode="markers",
+        marker=dict(color="red", size=10),
+        name="Prediction",
+    )
+
+    st.plotly_chart(fig)
