@@ -42,7 +42,6 @@ if player:
     batting = (
         pl.scan_parquet("parquets/batting.parquet")
         .filter(pl.col("id") == player_id)
-        .filter(pl.col("ab") > 100)
         .with_columns(
             pl.col("date")
             .cast(pl.String)
@@ -53,6 +52,7 @@ if player:
         .group_by("id", "year")
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
+        .filter(pl.col("ab") > 100)
         .sort("year")
     ).collect()
 
