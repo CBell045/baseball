@@ -78,13 +78,13 @@ if player:
             )
         ),
         h=1,
-        level=[99],
+        level=[75],
     )
     st.dataframe(forecasts_df)
 
     # Display prediction
     st.write(
-        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-99').item():.3f} to {forecasts_df.select('AutoARIMA-hi-99').item():.3f})"
+        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-75').item():.3f} to {forecasts_df.select('AutoARIMA-hi-75').item():.3f})"
     )
 
     st.write(
@@ -109,12 +109,12 @@ if player:
             type="data",
             symmetric=False,
             array=[
-                forecasts_df.select("AutoARIMA-hi-99").item()
+                forecasts_df.select("AutoARIMA-hi-75").item()
                 - forecasts_df.select("AutoARIMA").item()
             ],
             arrayminus=[
                 forecasts_df.select("AutoARIMA").item()
-                - forecasts_df.select("AutoARIMA-lo-99").item()
+                - forecasts_df.select("AutoARIMA-lo-75").item()
             ],
         ),
     )
