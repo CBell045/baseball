@@ -94,10 +94,12 @@ if player:
     )
     st.dataframe(
         forecasts_df,
-        use_container_width=True,
         column_config={
             "unique_id": "Player ID",
-            "ds": "Year",
+            "ds": st.column_config.TextColumn(
+                "Year",
+                help="Year / Season",
+            ),
         },
     )
 
