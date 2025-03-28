@@ -78,13 +78,13 @@ if player:
             )
         ),
         h=1,
-        level=[95],
+        level=[99],
     )
     st.dataframe(forecasts_df)
 
     # Display prediction
     st.write(
-        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-95').item():.3f} to {forecasts_df.select('AutoARIMA-hi-95').item():.3f})"
+        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-99').item():.3f} to {forecasts_df.select('AutoARIMA-hi-99').item():.3f})"
     )
 
     st.write(
@@ -105,6 +105,20 @@ if player:
         mode="markers",
         marker=dict(color="red", size=10),
         name="Prediction",
+        error_y=dict(
+            type="data",
+            symmetric=False,
+            array=[
+                forecasts_df.select("AutoARIMA-hi-99").item()
+                - forecasts_df.select("AutoARIMA").item()
+            ],
+            arrayminus=[
+                forecasts_df.select("AutoARIMA").item()
+                - forecasts_df.select("AutoARIMA-lo-99").item()
+            ],
+        ),
     )
+
+    # Add confidence intervals
 
     st.plotly_chart(fig)
