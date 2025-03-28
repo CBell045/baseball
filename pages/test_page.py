@@ -6,7 +6,7 @@ st.write("yay1")
 
 
 batting = (
-    pl.scan_parquet("../../parquets/batting.parquet")
+    pl.scan_parquet("parquets/batting.parquet")
     .with_columns(
         pl.col("date")
         .cast(pl.String)
