@@ -8,7 +8,13 @@ st.header("Batting Average Prediction ⚾")
 
 st.write(
     "This app predicts the batting average of a player for the next season using data from retrosheet."
+)
+
+st.write(
     "The model is trained on the player's historical data, excluding their last season played."
+)
+
+st.write(
     "The model then predicts the batting average for the last season and compares it with the actual batting average."
 )
 
@@ -86,15 +92,13 @@ if player:
         h=1,
         level=[75],
     )
-    st.dataframe(forecasts_df)
-
-    # Display prediction
-    st.write(
-        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-75').item():.3f} to {forecasts_df.select('AutoARIMA-hi-75').item():.3f})"
-    )
-
-    st.write(
-        f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
+    st.dataframe(
+        forecasts_df,
+        use_container_width=True,
+        column_config={
+            "unique_id": "Player ID",
+            "ds": "Year",
+        },
     )
 
     # Create chart
@@ -125,6 +129,13 @@ if player:
         ),
     )
 
-    # Add confidence intervals
-
     st.plotly_chart(fig)
+
+    # Display prediction
+    st.write(
+        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-75').item():.3f} to {forecasts_df.select('AutoARIMA-hi-75').item():.3f})"
+    )
+
+    st.write(
+        f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
+    )
