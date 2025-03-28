@@ -47,13 +47,11 @@ if player:
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
         .filter(pl.col("b_ab") > 100)
+        .sort("year")
     ).collect()
 
     # Last year
     year = batting.select("year").max().item()
-
-    # Filter data based on selected year
-    df = batting.filter(pl.col("year") < year)
 
     models = [
         statsforecast.models.AutoARIMA(),
@@ -72,10 +70,12 @@ if player:
     )
 
     forecasts_df = sf.forecast(
-        df=batting.select(
-            pl.col("id").alias("unique_id"),
-            pl.col("year").alias("ds"),
-            pl.col("avg").alias("y"),
+        df=(
+            batting.filter(pl.col("year") < year).select(
+                pl.col("id").alias("unique_id"),
+                pl.col("year").alias("ds"),
+                pl.col("avg").alias("y"),
+            )
         ),
         h=1,
         level=[95],
