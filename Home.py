@@ -107,21 +107,18 @@ if player and year and model_name:
     # Last year
     year = batting.select("year").max().item()
 
-    if model_name == "AutoARIMA":
-        model = statsforecast.models.AutoARIMA()
-    elif model_name == "AutoRegressive":
-        model = statsforecast.models.AutoRegressive(10)
-    elif model_name == "HoltWinters":
-        model = statsforecast.models.HoltWinters()
-    elif model_name == "HistoricAverage":
-        model = statsforecast.models.HistoricAverage()
-    else:
-        st.error(f"Model '{model_name}' is not supported.")
-        model = statsforecast.models.AutoARIMA()
+    # models = [
+    #     statsforecast.models.AutoARIMA(),
+    #     # statsforecast.models.AutoETS(),
+    #     # statsforecast.models.AutoRegressive(10),
+    #     # statsforecast.models.HoltWinters(),
+    #     # statsforecast.models.HistoricAverage(),
+    # ]
+    model = statsforecast.models.__dict__.get(model_name)
 
     # Instantiate StatsForecast class as sf
     sf = statsforecast.StatsForecast(
-        models=model,
+        models=[model],
         freq=1,
         n_jobs=-1,
         verbose=True,
