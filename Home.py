@@ -90,6 +90,7 @@ if player and year and model_name:
     batting = (
         pl.scan_parquet("parquets/batting.parquet")
         .filter(pl.col("id") == player_id)
+        .filter(pl.col("year") <= year)
         .with_columns(
             pl.col("date")
             .cast(pl.String)
@@ -155,7 +156,7 @@ if player and year and model_name:
             symmetric=False,
             array=[
                 forecasts_df.select(f"{model_name}-hi-75").item()
-                - forecasts_df.select("AutoARIMA").item()
+                - forecasts_df.select(model_name).item()
             ],
             arrayminus=[
                 forecasts_df.select(model_name).item()
