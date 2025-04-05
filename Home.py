@@ -12,18 +12,17 @@ st.write(
 )
 
 st.write(
-    "The model is trained on the player's historical data, excluding their last season played."
+    "The model is trained on the player's historical data, excluding the season of interest."
 )
 
 st.write(
-    "The model then predicts the batting average for the last season and compares it with the actual batting average."
+    "You may choose to use an Arima, ETS (Exponential Smoothing), or Historic Average model for the prediction."
 )
 
 
 # Model selection
 model_options = [
     "AutoARIMA",
-    "SimpleExponentialSmoothing",
     "AutoETS",
     "HistoricAverage",
 ]
