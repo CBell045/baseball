@@ -29,7 +29,7 @@ model_options = [
 ]
 
 # Select model for prediction
-model = st.selectbox(
+model_name = st.selectbox(
     "Select Forecasting Model",
     model_options,
 )
@@ -83,7 +83,7 @@ player: str = st.selectbox(
 )
 
 
-if player and year and model:
+if player and year and model_name:
     player_id = players.filter(pl.col("name") == player).select("id").item()
 
     # Filter data based on selected player(s)
@@ -114,16 +114,11 @@ if player and year and model:
     #     # statsforecast.models.HoltWinters(),
     #     # statsforecast.models.HistoricAverage(),
     # ]
-    statsforecast.models.__dict__.get(
-        model
-    )  # Ensure the model is available in the statsforecast.models module
-    if not statsforecast.models.__dict__.get(model):
-        st.error(f"Model {model} is not available.")
-        st.stop()
+    model = statsforecast.models.__dict__.get(model_name)
 
     # Instantiate StatsForecast class as sf
     sf = statsforecast.StatsForecast(
-        models=statsforecast.models.__dict__[model](),
+        models=model,
         freq=1,
         n_jobs=-1,
         verbose=True,
