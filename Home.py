@@ -1,6 +1,7 @@
 import streamlit as st
 import plotly.express as px
 import polars as pl
+import statsforecast.models
 import statsforecast
 
 
@@ -113,10 +114,16 @@ if player and year and model:
     #     # statsforecast.models.HoltWinters(),
     #     # statsforecast.models.HistoricAverage(),
     # ]
+    statsforecast.models.__dict__.get(
+        model
+    )  # Ensure the model is available in the statsforecast.models module
+    if not statsforecast.models.__dict__.get(model):
+        st.error(f"Model {model} is not available.")
+        st.stop()
 
     # Instantiate StatsForecast class as sf
     sf = statsforecast.StatsForecast(
-        models=statsforecast.models.__dict__[model](), 
+        models=statsforecast.models.__dict__[model](),
         freq=1,
         n_jobs=-1,
         verbose=True,
