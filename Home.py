@@ -100,12 +100,9 @@ if player and year and model_name:
         .group_by("id", "year")
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
-        .filter(pl.col("b_ab") > 100)
+        .filter(pl.col("b_ab") > 1)
         .sort("year")
     ).collect()
-
-    # Last year
-    year = batting.select("year").max().item()
 
     model = statsforecast.models.__dict__.get(model_name)
 
@@ -149,7 +146,7 @@ if player and year and model_name:
 
     fig.add_scatter(
         x=[year],
-        y=[forecasts_df.select("AutoARIMA").item()],
+        y=[forecasts_df.select(model_name).item()],
         mode="markers",
         marker=dict(color="red", size=10),
         name="Prediction",
@@ -157,12 +154,12 @@ if player and year and model_name:
             type="data",
             symmetric=False,
             array=[
-                forecasts_df.select("AutoARIMA-hi-75").item()
+                forecasts_df.select(f"{model_name}-hi-75").item()
                 - forecasts_df.select("AutoARIMA").item()
             ],
             arrayminus=[
-                forecasts_df.select("AutoARIMA").item()
-                - forecasts_df.select("AutoARIMA-lo-75").item()
+                forecasts_df.select(model_name).item()
+                - forecasts_df.select(f"{model_name}-lo-75").item()
             ],
         ),
     )
@@ -171,7 +168,7 @@ if player and year and model_name:
 
     # Display prediction
     st.write(
-        f"Predicted Batting Average for {year}: {forecasts_df.select('AutoARIMA').item():.3f} (Confidence range of {forecasts_df.select('AutoARIMA-lo-75').item():.3f} to {forecasts_df.select('AutoARIMA-hi-75').item():.3f})"
+        f"Predicted Batting Average for {year}: {forecasts_df.select(model_name).item():.3f} (Confidence range of {forecasts_df.select(f'{model_name}-lo-75').item():.3f} to {forecasts_df.select(f'{model_name}-hi-75').item():.3f})"
     )
 
     st.write(
