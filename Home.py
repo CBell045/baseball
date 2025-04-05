@@ -23,8 +23,8 @@ st.write(
 # Model selection
 model_options = [
     "AutoARIMA",
-    "AutoRegressive",
-    "HoltWinters",
+    "SimpleExponentialSmoothing",
+    "AutoETS",
     "HistoricAverage",
 ]
 
