@@ -118,7 +118,7 @@ if player and year and model_name:
 
     # Instantiate StatsForecast class as sf
     sf = statsforecast.StatsForecast(
-        models=[model],
+        models=[model()],
         freq=1,
         n_jobs=-1,
         verbose=True,
