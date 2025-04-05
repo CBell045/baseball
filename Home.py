@@ -43,13 +43,11 @@ year: int = st.selectbox(
 )
 
 
-# Players who played in year - 1
+# Players who played in year
 active_players = (
     (
         pl.scan_parquet("parquets/allplayers.parquet")
-        .filter(
-            pl.col("season") == year - 1
-        )  # Filter players who played in the previous season
+        .filter(pl.col("season") == year)
         .select("id")
         .unique()
     )
@@ -90,7 +88,6 @@ if player and year and model_name:
     batting = (
         pl.scan_parquet("parquets/batting.parquet")
         .filter(pl.col("id") == player_id)
-        .filter(pl.col("year") <= year)
         .with_columns(
             pl.col("date")
             .cast(pl.String)
@@ -98,6 +95,7 @@ if player and year and model_name:
             .dt.year()
             .alias("year")
         )
+        .filter(pl.col("year") <= year)
         .group_by("id", "year")
         .agg(pl.col("b_h").sum(), pl.col("b_ab").sum())
         .with_columns((pl.col("b_h") / pl.col("b_ab")).alias("avg"))
