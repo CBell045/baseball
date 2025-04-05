@@ -62,7 +62,7 @@ active_players = (
 players = (
     pl.scan_parquet("parquets/allplayers.parquet")
     .filter(pl.col("id").is_in(active_players))
-    .filter(pl.col("g") > 30)
+    .filter(pl.col("g") > 60)
     .with_columns(
         (pl.col("first") + pl.lit(" ") + pl.col("last")).alias("name"),
         pl.count("season").over("id").alias("count"),
@@ -73,7 +73,7 @@ players = (
         pl.col("name"),
         pl.col("id"),
     )
-    .unique()
+    .unique(["id"])
     .sort("name")
 ).collect()
 
@@ -107,13 +107,6 @@ if player and year and model_name:
     # Last year
     year = batting.select("year").max().item()
 
-    # models = [
-    #     statsforecast.models.AutoARIMA(),
-    #     # statsforecast.models.AutoETS(),
-    #     # statsforecast.models.AutoRegressive(10),
-    #     # statsforecast.models.HoltWinters(),
-    #     # statsforecast.models.HistoricAverage(),
-    # ]
     model = statsforecast.models.__dict__.get(model_name)
 
     # Instantiate StatsForecast class as sf
