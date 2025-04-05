@@ -18,9 +18,49 @@ st.write(
     "The model then predicts the batting average for the last season and compares it with the actual batting average."
 )
 
+
+# Model selection
+model_options = [
+    "AutoARIMA",
+    "AutoRegressive",
+    "HoltWinters",
+    "HistoricAverage",
+]
+
+# Select model for prediction
+model = st.selectbox(
+    "Select Forecasting Model",
+    model_options,
+)
+
+
+year_options = range(2024, 1910, -1)
+
+year: int = st.selectbox(
+    "Select Year to Predict Batting Average",
+    year_options,
+)
+
+
+# Players who played in year - 1
+active_players = (
+    (
+        pl.scan_parquet("parquets/allplayers.parquet")
+        .filter(
+            pl.col("season") == year - 1
+        )  # Filter players who played in the previous season
+        .select("id")
+        .unique()
+    )
+    .collect()
+    .to_series()
+)
+
+
 # Dropdown to select player(s)
 players = (
     pl.scan_parquet("parquets/allplayers.parquet")
+    .filter(pl.col("id").is_in(active_players))
     .filter(pl.col("g") > 30)
     .with_columns(
         (pl.col("first") + pl.lit(" ") + pl.col("last")).alias("name"),
@@ -41,7 +81,8 @@ player: str = st.selectbox(
     players,
 )
 
-if player:
+
+if player and year and model:
     player_id = players.filter(pl.col("name") == player).select("id").item()
 
     # Filter data based on selected player(s)
@@ -65,17 +106,17 @@ if player:
     # Last year
     year = batting.select("year").max().item()
 
-    models = [
-        statsforecast.models.AutoARIMA(),
-        # statsforecast.models.AutoETS(),
-        # statsforecast.models.AutoRegressive(10),
-        # statsforecast.models.HoltWinters(),
-        # statsforecast.models.HistoricAverage(),
-    ]
+    # models = [
+    #     statsforecast.models.AutoARIMA(),
+    #     # statsforecast.models.AutoETS(),
+    #     # statsforecast.models.AutoRegressive(10),
+    #     # statsforecast.models.HoltWinters(),
+    #     # statsforecast.models.HistoricAverage(),
+    # ]
 
     # Instantiate StatsForecast class as sf
     sf = statsforecast.StatsForecast(
-        models=models,
+        models=statsforecast.models.__dict__[model](), 
         freq=1,
         n_jobs=-1,
         verbose=True,
