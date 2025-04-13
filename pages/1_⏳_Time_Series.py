@@ -161,6 +161,11 @@ if player and year and model_name:
         f"Predicted Batting Average for {year}: {forecasts_df.select(model_name).item():.3f} (Confidence range of {forecasts_df.select(f'{model_name}-lo-75').item():.3f} to {forecasts_df.select(f'{model_name}-hi-75').item():.3f})"
     )
     # Display actual batting average
-    st.write(
-        f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
-    )
+    if batting.filter(pl.col("year") == year).shape[0] > 0:
+        st.write(
+            f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
+        )
+    else:
+        st.write(
+            f"No data available for {year}. The player may not have played that year."
+        )

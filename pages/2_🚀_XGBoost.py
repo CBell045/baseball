@@ -9,11 +9,11 @@ st.header("XGBoost Model")
 
 
 st.write(
-    "The model is trained on the player's historical data, excluding the season of interest."
+    "The model is trained on all players' historical data, up to 2019."
 )
 
 
-year_options = range(2024, 1910, -1)
+year_options = range(2024, 2019, -1)
 
 year: int = st.selectbox(
     "Select Year to Predict Batting Average",
@@ -68,34 +68,19 @@ if player and year:
     ).collect()
     batting_adv = batting_adv.sort(["id", "year"])
 
-    # Lag OBP, SLG, and K% by 1 year to use as features for predicting next year
-    batting_adv = batting_adv.with_columns(
-        [
-            pl.col("b_obp").shift(1).alias("lag_obp"),
-            pl.col("b_slg").shift(1).alias("lag_slg"),
-            pl.col("b_k_pct").shift(1).alias("lag_k_pct"),
-        ]
-    )
-
     training_data = batting_adv.filter(pl.col("year") < year)
-    X = training_data.select(["lag_obp", "lag_slg", "lag_k_pct"]).to_numpy()
+    X = training_data.select(["lag_b_obp", "lag_b_slg", "lag_b_k_pct"]).to_numpy()
     y = training_data.select("b_ba").to_numpy().ravel()
 
-    model = xgb.XGBRegressor(
-        objective="reg:squarederror",
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=5,
-        random_state=123,
-    )
-    model.fit(X, y)
+    model = xgb.XGBRegressor()
+    model.load_model("models/xgboost.json")
 
     prediction = model.predict(
         np.array(
             [
-                [batting_adv.filter(pl.col("year") == year).select("lag_obp").item()],
-                [batting_adv.filter(pl.col("year") == year).select("lag_slg").item()],
-                [batting_adv.filter(pl.col("year") == year).select("lag_k_pct").item()],
+                [batting_adv.filter(pl.col("year") == year).select("lag_b_obp").item()],
+                [batting_adv.filter(pl.col("year") == year).select("lag_b_slg").item()],
+                [batting_adv.filter(pl.col("year") == year).select("lag_b_k_pct").item()],
             ]
         ).reshape(1, -1)
     )
