@@ -41,39 +41,15 @@ def process_chunk(chunk):
     
     return stats
 
-def load_and_process_data(csv_file, chunk_size=100000):
-    """Load and process data in parallel using multiple CPU cores."""
-    print(f"Loading and processing data from {csv_file}...")
+def load_and_process_data(parquet_file):
+    """Load and process data."""
+    print(f"Loading and processing data from {parquet_file}...")
+
+    # Read the parquet file in chunks
+    stats = pd.read_parquet(parquet_file)
+    stats = process_chunk(stats)
     
-    # Get the number of CPU cores
-    num_cores = os.cpu_count()
-    print(f"Using {num_cores} CPU cores for parallel processing")
-    
-    # Read the CSV file in chunks
-    chunks = pd.read_csv(csv_file, chunksize=chunk_size, low_memory=False)
-    
-    # Process chunks in parallel
-    with ProcessPoolExecutor(max_workers=num_cores) as executor:
-        results = list(executor.map(process_chunk, chunks))
-    
-    # Combine all results
-    print("Combining processed chunks...")
-    combined_stats = pd.concat(results, ignore_index=True)
-    
-    # Group by player and year again to handle any overlapping chunks
-    final_stats = combined_stats.groupby(['id', 'yearID']).agg({
-        'b_ab': 'sum',
-        'b_h': 'sum',
-        'batting_avg': 'mean',
-        'on_base_pct': 'mean',
-        'slugging_pct': 'mean',
-        'strikeout_rate': 'mean',
-        'isolated_power': 'mean',
-        'walk_rate': 'mean',
-        'extra_base_hit_rate': 'mean'
-    }).reset_index()
-    
-    return final_stats
+    return stats
 
 def list_available_players(stats_df, min_at_bats=100):
     """List available players with their batting averages."""
@@ -232,7 +208,7 @@ def generate_player_analysis(stats_df, model, scaler, imputer, features, min_at_
 
 def main():
     # File paths
-    csv_file = 'Data Download/batting.csv'
+    csv_file = '../../parquets/batting.parquet'
     
     try:
         # Load and process data
