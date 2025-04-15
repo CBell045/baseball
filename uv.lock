@@ -73,6 +73,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "altair" },
     { name = "ipykernel" },
+    { name = "pandas" },
     { name = "plotly" },
     { name = "polars" },
     { name = "pybaseball" },
@@ -87,6 +88,7 @@ dependencies = [
 requires-dist = [
     { name = "altair", specifier = ">=5.5.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
+    { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.0" },
     { name = "polars", specifier = ">=1.22.0" },
     { name = "pybaseball", specifier = ">=2.2.7" },

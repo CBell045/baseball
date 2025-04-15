@@ -11,6 +11,3 @@ wheels/
 
 # Dev ipynb
 ignore.ipynb
-
-# CSV files
-csvs/
