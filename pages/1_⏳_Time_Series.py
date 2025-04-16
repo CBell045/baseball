@@ -99,75 +99,78 @@ if player and year and model_name:
 
     model = statsforecast.models.__dict__.get(model_name)
 
-    # Instantiate StatsForecast class as sf
-    sf = statsforecast.StatsForecast(
-        models=[model()],
-        freq=1,
-        n_jobs=-1,
-        verbose=True,
-    )
-
-    forecasts_df = sf.forecast(
-        df=(
-            batting.filter(pl.col("year") < year).select(
-                pl.col("id").alias("unique_id"),
-                pl.col("year").alias("ds"),
-                pl.col("avg").alias("y"),
-            )
-        ),
-        h=1,
-        level=[75],
-    )
-    st.dataframe(
-        forecasts_df,
-        column_config={
-            "unique_id": "Player ID",
-            "ds": st.column_config.TextColumn(
-                "Year",
-                help="Year / Season",
+    try:
+        # Instantiate StatsForecast class as sf
+        sf = statsforecast.StatsForecast(
+            models=[model()],
+            freq=1,
+            n_jobs=-1,
+            verbose=True,
+        )
+        forecasts_df = sf.forecast(
+            df=(
+                batting.filter(pl.col("year") < year).select(
+                    pl.col("id").alias("unique_id"),
+                    pl.col("year").alias("ds"),
+                    pl.col("avg").alias("y"),
+                )
             ),
-        },
-    )
-    # Create chart
-    fig = px.line(
-        batting,
-        x="year",
-        y="avg",
-        title=f"Batting Average Prediction for {player}",
-    )
-
-    fig.add_scatter(
-        x=[year],
-        y=[forecasts_df.select(model_name).item()],
-        mode="markers",
-        marker=dict(color="red", size=10),
-        name="Prediction",
-        error_y=dict(
-            type="data",
-            symmetric=False,
-            array=[
-                forecasts_df.select(f"{model_name}-hi-75").item()
-                - forecasts_df.select(model_name).item()
-            ],
-            arrayminus=[
-                forecasts_df.select(model_name).item()
-                - forecasts_df.select(f"{model_name}-lo-75").item()
-            ],
-        ),
-    )
-
-    st.plotly_chart(fig)
-
-    # Display prediction
-    st.write(
-        f"Predicted Batting Average for {year}: {forecasts_df.select(model_name).item():.3f} (Confidence range of {forecasts_df.select(f'{model_name}-lo-75').item():.3f} to {forecasts_df.select(f'{model_name}-hi-75').item():.3f})"
-    )
-    # Display actual batting average
-    if batting.filter(pl.col("year") == year).shape[0] > 0:
-        st.write(
-            f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
+            h=1,
+            level=[75],
         )
-    else:
-        st.write(
-            f"No data available for {year}. The player may not have played that year."
+        st.dataframe(
+            forecasts_df,
+            column_config={
+                "unique_id": "Player ID",
+                "ds": st.column_config.TextColumn(
+                    "Year",
+                    help="Year / Season",
+                ),
+            },
         )
+        # Create chart
+        fig = px.line(
+            batting,
+            x="year",
+            y="avg",
+            title=f"Batting Average Prediction for {player}",
+        )
+
+        fig.add_scatter(
+            x=[year],
+            y=[forecasts_df.select(model_name).item()],
+            mode="markers",
+            marker=dict(color="red", size=10),
+            name="Prediction",
+            error_y=dict(
+                type="data",
+                symmetric=False,
+                array=[
+                    forecasts_df.select(f"{model_name}-hi-75").item()
+                    - forecasts_df.select(model_name).item()
+                ],
+                arrayminus=[
+                    forecasts_df.select(model_name).item()
+                    - forecasts_df.select(f"{model_name}-lo-75").item()
+                ],
+            ),
+        )
+
+        st.plotly_chart(fig)
+
+        # Display prediction
+        st.write(
+            f"Predicted Batting Average for {year}: {forecasts_df.select(model_name).item():.3f} (Confidence range of {forecasts_df.select(f'{model_name}-lo-75').item():.3f} to {forecasts_df.select(f'{model_name}-hi-75').item():.3f})"
+        )
+        # Display actual batting average
+        if batting.filter(pl.col("year") == year).shape[0] > 0:
+            st.write(
+                f"Actual Batting Average for {year}: {batting.filter(pl.col('year') == year).select('avg').item():.3f}"
+            )
+        else:
+            st.write(
+                f"No data available for {year}. The player may not have played that year."
+            )
+
+    except Exception as e:
+        st.error("Error making prediction. Please try another player")
