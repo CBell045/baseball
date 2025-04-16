@@ -45,6 +45,17 @@ if df is not None:
     # Filter data based on selection
     filtered_df = df[df['current_year'] == selected_year]
     
+    # Add names to filtered_df by joining with allplayers.parquet
+    allplayers_df = pd.read_parquet("parquets/allplayers.parquet").drop_duplicates(subset=['id'])
+    filtered_df = filtered_df.merge(
+        allplayers_df[['id', 'first', 'last']],
+        on='id',
+        how='left'
+    )
+    filtered_df['name'] = filtered_df['first'] + ' ' + filtered_df['last']
+    filtered_df.drop(columns=['first', 'last'], inplace=True)
+    filtered_df = filtered_df[['name'] + [col for col in filtered_df.columns if col != 'name']]
+    
     # Create three columns for metrics
     col1, col2, col3 = st.columns(3)
     
@@ -97,23 +108,23 @@ if df is not None:
         fig = go.Figure()
         fig.add_trace(go.Bar(
             name='Model Prediction',
-            x=filtered_df['id'],
+            x=filtered_df['name'],
             y=filtered_df['model_prediction']
         ))
         fig.add_trace(go.Bar(
             name='Trend Prediction',
-            x=filtered_df['id'],
+            x=filtered_df['name'],
             y=filtered_df['trend_prediction']
         ))
         fig.add_trace(go.Bar(
             name='Combined Prediction',
-            x=filtered_df['id'],
+            x=filtered_df['name'],
             y=filtered_df['combined_prediction']
         ))
         fig.update_layout(
             title='Comparison of Prediction Methods',
             barmode='group',
-            xaxis_title='Player ID',
+            xaxis_title='Player Name',
             yaxis_title='Predicted Batting Average'
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -138,7 +149,7 @@ if df is not None:
         st.subheader("Top 5 Players Expected to Improve")
         top_improvers = filtered_df.nlargest(5, 'combined_prediction')
         for _, player in top_improvers.iterrows():
-            st.write(f"Player {player['id']}: {player['current_batting_avg']:.3f} → {player['combined_prediction']:.3f}")
+            st.write(f"Player {player['name']}: {player['current_batting_avg']:.3f} → {player['combined_prediction']:.3f}")
     
     with col2:
         st.subheader("Prediction Confidence")

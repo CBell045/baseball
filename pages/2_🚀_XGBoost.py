@@ -37,6 +37,7 @@ active_players = (
 players = (
     pl.scan_parquet("parquets/allplayers.parquet")
     .filter(pl.col("id").is_in(active_players))
+    .filter((pl.col("g_p") + pl.col("g_sp") + pl.col("g_rp")) < 10)
     .filter(pl.col("g") > 60)
     .with_columns(
         (pl.col("first") + pl.lit(" ") + pl.col("last")).alias("name"),
