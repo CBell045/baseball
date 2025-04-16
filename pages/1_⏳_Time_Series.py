@@ -3,6 +3,7 @@ import plotly.express as px
 import polars as pl
 import statsforecast.models
 import statsforecast
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
 st.header("Time Series Models")
@@ -18,7 +19,7 @@ st.write(
 
 
 # Model selection
-model_options = ["AutoARIMA", "AutoETS", "HistoricAverage"]
+model_options = ["AutoARIMA", "AutoETS", "HistoricAverage", "SARIMA"]
 
 # Select model for prediction
 model_name = st.selectbox(
@@ -74,6 +75,7 @@ player: str = st.selectbox(
 
 
 if player and year and model_name:
+
     player_id = players.filter(pl.col("name") == player).select("id").item()
 
     # Filter data based on selected player(s)
@@ -94,28 +96,65 @@ if player and year and model_name:
         .filter(pl.col("b_ab") > 1)
         .sort("year")
     ).collect()
+    
+    if model_name != "SARIMA":
 
-    model = statsforecast.models.__dict__.get(model_name)
+        model = statsforecast.models.__dict__.get(model_name)
 
-    # Instantiate StatsForecast class as sf
-    sf = statsforecast.StatsForecast(
-        models=[model()],
-        freq=1,
-        n_jobs=-1,
-        verbose=True,
-    )
+        # Instantiate StatsForecast class as sf
+        sf = statsforecast.StatsForecast(
+            models=[model()],
+            freq=1,
+            n_jobs=-1,
+            verbose=True,
+        )
 
-    forecasts_df = sf.forecast(
-        df=(
-            batting.filter(pl.col("year") < year).select(
-                pl.col("id").alias("unique_id"),
-                pl.col("year").alias("ds"),
-                pl.col("avg").alias("y"),
-            )
-        ),
-        h=1,
-        level=[75],
-    )
+        forecasts_df = sf.forecast(
+            df=(
+                batting.filter(pl.col("year") < year).select(
+                    pl.col("id").alias("unique_id"),
+                    pl.col("year").alias("ds"),
+                    pl.col("avg").alias("y"),
+                )
+            ),
+            h=1,
+            level=[75],
+        )
+    else: # SARIMA
+        
+        # Prepare data for SARIMAX
+        sarimax_data = batting.filter(pl.col("year") < year).select(
+            pl.col("avg")
+        ).to_pandas()
+
+        # Instantiate SARIMAX model
+        model = SARIMAX(
+            endog=sarimax_data["avg"],
+            order=(1, 0, 0),
+            seasonal_order=(1, 0, 0, 12),  # Adjusted for yearly seasonality
+            suppress_warnings=True,
+        )
+
+        # Fit the model
+        fitted_model = model.fit(disp=False)
+
+        # Forecast for the next period
+        forecast_result = fitted_model.get_forecast(steps=1)
+        forecast_mean = forecast_result.predicted_mean.iloc[0]
+        forecast_ci = forecast_result.conf_int(alpha=0.25)
+
+        # Prepare forecast DataFrame
+        forecasts_df = pl.DataFrame(
+            {
+                "unique_id": [player_id],
+                "ds": [year],
+                model_name: [forecast_mean],
+                f"{model_name}-lo-75": [forecast_ci.iloc[0, 0]],
+                f"{model_name}-hi-75": [forecast_ci.iloc[0, 1]],
+            }
+        )
+        
+           
     st.dataframe(
         forecasts_df,
         column_config={
