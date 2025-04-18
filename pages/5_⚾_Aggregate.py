@@ -168,8 +168,8 @@ if df is not None:
     with col2:
         st.subheader("Prediction Confidence")
         st.write(
-            f"Average prediction difference: {abs(filtered_df['model_prediction'] - filtered_df['trend_prediction']).mean():.3f}"
+            f"Average prediction difference: {abs(filtered_df['current_batting_avg'] - filtered_df['combined_prediction']).mean():.3f}"
         )
         st.write(
-            f"Players with consistent predictions: {(abs(filtered_df['model_prediction'] - filtered_df['trend_prediction']) < 0.05).sum()}"
+            f"Players with consistent predictions: {(abs(filtered_df['current_batting_avg'] - filtered_df['combined_prediction']) < 0.05).sum()}"
         )
