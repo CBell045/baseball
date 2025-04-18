@@ -17,6 +17,7 @@ st.write(
 - XGBoost Model
 - Stadium Effects
 - Historical Averages
+- Aggregate Predictions
 """
 )
 

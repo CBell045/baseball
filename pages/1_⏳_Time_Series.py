@@ -97,10 +97,8 @@ if player and year and model_name:
         .filter(pl.col("b_ab") > 1)
         .sort("year")
     ).collect()
-    
-    if model_name != "SARIMA":
-    
 
+    if model_name != "SARIMA":
         model = statsforecast.models.__dict__.get(model_name)
 
         try:
@@ -122,6 +120,15 @@ if player and year and model_name:
                 h=1,
                 level=[75],
             )
+
+            actual_avg = batting.filter(pl.col("year") == year).select("avg").item()
+
+            mse = (forecasts_df.select(model_name).item() - actual_avg) ** 2
+            mae = abs(forecasts_df.select(model_name).item() - actual_avg)
+
+            # Display evaluation metrics
+            st.write(f"MSE: {mse:.4f}, MAE: {mae:.4f}")
+
             st.dataframe(
                 forecasts_df,
                 column_config={
@@ -178,12 +185,13 @@ if player and year and model_name:
 
         except Exception as e:
             st.error("Error making prediction. Please try another player")
+
     else:
         try:
             # Prepare data for SARIMAX
-            sarimax_data = batting.filter(pl.col("year") < year).select(
-                pl.col("avg")
-            ).to_pandas()
+            sarimax_data = (
+                batting.filter(pl.col("year") < year).select(pl.col("avg")).to_pandas()
+            )
 
             # Instantiate SARIMAX model
             model = SARIMAX(
@@ -211,8 +219,13 @@ if player and year and model_name:
                     f"{model_name}-hi-75": [forecast_ci.iloc[0, 1]],
                 }
             )
-            
-            
+
+            actual_avg = batting.filter(pl.col("year") == year).select("avg").item()
+            mse = (forecast_mean - actual_avg) ** 2
+            mae = abs(forecast_mean - actual_avg)
+            # Display evaluation metrics
+            st.write(f"MSE: {mse:.4f}, MAE: {mae:.4f}")
+
             st.dataframe(
                 forecasts_df,
                 column_config={
